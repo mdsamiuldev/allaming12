@@ -1,0 +1,7 @@
+{
+  "name": "মোল্লা পরিবার - Molla Family Portal",
+  "description": "মোল্লা পরিবারের পারিবারিক ওয়েবসাইট, সদস্য তালিকা, মাসিক চাঁদা হিসাব, ঈদ অনুষ্ঠান বাজেট এবং কল্যাণ ট্রাস্ট সহায়তা ব্যবস্থাপনা।",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
