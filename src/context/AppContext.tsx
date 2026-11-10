@@ -17,8 +17,10 @@ import {
   INITIAL_EID_EVENTS,
   INITIAL_AID_RECORDS,
   INITIAL_TRUST_SUMMARY,
+  INITIAL_BASE_RESERVE,
 } from '../data/seedData';
 import { canUserManageMember } from '../utils/familyStats';
+import { calculateLiveFundBalance, LiveFundSummary } from '../utils/financeStats';
 
 interface AppContextType {
   // User & Auth
@@ -36,14 +38,40 @@ interface AppContextType {
   deleteFamilyMember: (id: string) => void;
   canEditMember: (member: FamilyMember) => boolean;
 
-  // 15 Members Monthly Chanda (500 BDT)
+  // Monthly Chanda (No limit on members)
   chandaMembers: ChandaMember[];
-  updateChandaMember: (id: number, data: { name: string; fatherOrHusbandName?: string; phone?: string }) => void;
+  addChandaMember: (data: {
+    name: string;
+    fatherOrHusbandName?: string;
+    phone?: string;
+    monthlyAmount?: number;
+    markPaidForMonth?: string;
+    note?: string;
+  }) => void;
+  deleteChandaMember: (id: number) => void;
+  updateChandaMember: (
+    id: number,
+    data: { name: string; fatherOrHusbandName?: string; phone?: string; monthlyAmount?: number }
+  ) => void;
   monthlyPayments: MonthlyPaymentRecord[];
   selectedMonth: string;
   setSelectedMonth: (month: string) => void;
   togglePaymentStatus: (memberId: number, month: string, note?: string) => void;
   updatePaymentRecord: (record: MonthlyPaymentRecord) => void;
+
+  // Live Auto-calculated Balance & Trust Fund
+  baseOpeningFund: number;
+  updateBaseOpeningFund: (amount: number) => void;
+  totalCurrentBalance: number;
+  liveFundSummary: LiveFundSummary;
+  trustFundPool: number;
+  aidRecords: AidRecord[];
+  aidApplications: AidApplication[];
+  addAidRecord: (record: Omit<AidRecord, 'id'>) => void;
+  updateAidRecord: (id: string, record: Partial<AidRecord>) => void;
+  deleteAidRecord: (id: string) => void;
+  submitAidApplication: (app: Omit<AidApplication, 'id' | 'date' | 'status'>) => void;
+  updateTrustFundPool: (amount: number) => void;
 
   // Eid Events (Fitr & Adha)
   eidEvents: EidEvent[];
@@ -55,16 +83,6 @@ interface AppContextType {
   updateExpenseItem: (eventId: 'eid-ul-fitr' | 'eid-ul-adha', itemId: string, item: Partial<ExpenseItem>) => void;
   deleteExpenseItem: (eventId: 'eid-ul-fitr' | 'eid-ul-adha', itemId: string) => void;
 
-  // Trust Fund & Medical Aid
-  trustFundPool: number;
-  aidRecords: AidRecord[];
-  aidApplications: AidApplication[];
-  addAidRecord: (record: Omit<AidRecord, 'id'>) => void;
-  updateAidRecord: (id: string, record: Partial<AidRecord>) => void;
-  deleteAidRecord: (id: string) => void;
-  submitAidApplication: (app: Omit<AidApplication, 'id' | 'date' | 'status'>) => void;
-  updateTrustFundPool: (amount: number) => void;
-
   // System
   resetAllData: () => void;
 }
@@ -72,14 +90,14 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 const STORAGE_KEYS = {
-  USER: 'molla_user_v3',
-  FAMILY: 'molla_family_v3',
-  CHANDA_MEMBERS: 'molla_chanda_members_v3',
-  CHANDA_PAYMENTS: 'molla_chanda_payments_v3',
-  EID_EVENTS: 'molla_eid_events_v3',
-  AID_RECORDS: 'molla_aid_records_v3',
-  TRUST_POOL: 'molla_trust_pool_v3',
-  AID_APPS: 'molla_aid_apps_v3',
+  USER: 'molla_user_v4',
+  FAMILY: 'molla_family_v4',
+  CHANDA_MEMBERS: 'molla_chanda_members_v4',
+  CHANDA_PAYMENTS: 'molla_chanda_payments_v4',
+  EID_EVENTS: 'molla_eid_events_v4',
+  AID_RECORDS: 'molla_aid_records_v4',
+  BASE_FUND: 'molla_base_fund_v4',
+  AID_APPS: 'molla_aid_apps_v4',
 };
 
 function loadStorage<T>(key: string, fallback: T): T {
@@ -116,8 +134,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     loadStorage<EidEvent[]>(STORAGE_KEYS.EID_EVENTS, INITIAL_EID_EVENTS)
   );
 
-  const [trustFundPool, setTrustFundPool] = useState<number>(() =>
-    loadStorage<number>(STORAGE_KEYS.TRUST_POOL, INITIAL_TRUST_SUMMARY.totalFundPool)
+  const [baseOpeningFund, setBaseOpeningFund] = useState<number>(() =>
+    loadStorage<number>(STORAGE_KEYS.BASE_FUND, INITIAL_BASE_RESERVE)
   );
 
   const [aidRecords, setAidRecords] = useState<AidRecord[]>(() =>
@@ -154,12 +172,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [aidRecords]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.TRUST_POOL, JSON.stringify(trustFundPool));
-  }, [trustFundPool]);
+    localStorage.setItem(STORAGE_KEYS.BASE_FUND, JSON.stringify(baseOpeningFund));
+  }, [baseOpeningFund]);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.AID_APPS, JSON.stringify(aidApplications));
   }, [aidApplications]);
+
+  // Dynamic automatic fund calculation: Base Opening Reserve + Paid Monthly Chanda - Disbursed Aid
+  const liveFundSummary = calculateLiveFundBalance(baseOpeningFund, monthlyPayments, aidRecords);
+  const totalCurrentBalance = liveFundSummary.currentBalance;
+  const trustFundPool = totalCurrentBalance;
 
   const isAdmin = currentUser?.role === 'admin';
 
@@ -248,10 +271,53 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     );
   };
 
-  // 15 Members Update (Name, Father/Husband, Phone)
+  // Chanda Members CRUD (No 15-person limit)
+  const addChandaMember = (data: {
+    name: string;
+    fatherOrHusbandName?: string;
+    phone?: string;
+    monthlyAmount?: number;
+    markPaidForMonth?: string;
+    note?: string;
+  }) => {
+    if (!isAdmin) return;
+    const newId = (chandaMembers.length > 0 ? Math.max(...chandaMembers.map((m) => m.id)) : 0) + 1;
+    const monthlyAmount = Number(data.monthlyAmount) || 500;
+    const newMember: ChandaMember = {
+      id: newId,
+      name: data.name.trim(),
+      fatherOrHusbandName: data.fatherOrHusbandName?.trim() || '',
+      phone: data.phone?.trim() || '',
+      monthlyAmount,
+      avatar: '👤',
+    };
+    setChandaMembers((prev) => [...prev, newMember]);
+
+    if (data.markPaidForMonth) {
+      const todayBn = new Date().toLocaleDateString('bn-BD');
+      setMonthlyPayments((prev) => [
+        ...prev.filter((p) => !(p.memberId === newId && p.month === data.markPaidForMonth)),
+        {
+          memberId: newId,
+          month: data.markPaidForMonth!,
+          isPaid: true,
+          amount: monthlyAmount,
+          paidDate: todayBn,
+          note: data.note || 'পরিশোধিত',
+        },
+      ]);
+    }
+  };
+
+  const deleteChandaMember = (id: number) => {
+    if (!isAdmin) return;
+    setChandaMembers((prev) => prev.filter((m) => m.id !== id));
+    setMonthlyPayments((prev) => prev.filter((p) => p.memberId !== id));
+  };
+
   const updateChandaMember = (
     id: number,
-    data: { name: string; fatherOrHusbandName?: string; phone?: string }
+    data: { name: string; fatherOrHusbandName?: string; phone?: string; monthlyAmount?: number }
   ) => {
     if (!isAdmin) return;
     setChandaMembers((prev) =>
@@ -265,15 +331,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                   ? data.fatherOrHusbandName.trim()
                   : m.fatherOrHusbandName,
               phone: data.phone !== undefined ? data.phone.trim() : m.phone,
+              monthlyAmount:
+                data.monthlyAmount !== undefined ? Number(data.monthlyAmount) : m.monthlyAmount,
             }
           : m
       )
     );
   };
 
-  // Monthly Chanda Toggles
+  // Monthly Chanda Toggles - auto updates balance immediately
   const togglePaymentStatus = (memberId: number, month: string, note?: string) => {
     if (!isAdmin) return;
+    const member = chandaMembers.find((m) => m.id === memberId);
+    const defaultAmount = member ? member.monthlyAmount : 500;
 
     setMonthlyPayments((prev) => {
       const existingIndex = prev.findIndex((r) => r.memberId === memberId && r.month === month);
@@ -281,13 +351,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       if (existingIndex >= 0) {
         const item = prev[existingIndex];
+        const nextPaid = !item.isPaid;
         const updated = [...prev];
         updated[existingIndex] = {
           ...item,
-          isPaid: !item.isPaid,
-          amount: !item.isPaid ? 500 : 0,
-          paidDate: !item.isPaid ? todayBn : undefined,
-          note: note !== undefined ? note : (!item.isPaid ? 'পরিশোধিত' : 'বকেয়া'),
+          isPaid: nextPaid,
+          amount: nextPaid ? (item.amount || defaultAmount) : 0,
+          paidDate: nextPaid ? todayBn : undefined,
+          note: note !== undefined ? note : (nextPaid ? 'পরিশোধিত' : 'বকেয়া'),
         };
         return updated;
       } else {
@@ -297,7 +368,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             memberId,
             month,
             isPaid: true,
-            amount: 500,
+            amount: defaultAmount,
             paidDate: todayBn,
             note: note || 'পরিশোধিত',
           },
@@ -317,6 +388,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
       return [...prev, record];
     });
+  };
+
+  const updateBaseOpeningFund = (amount: number) => {
+    if (!isAdmin) return;
+    setBaseOpeningFund(amount);
   };
 
   // Eid Events
@@ -418,7 +494,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const updateTrustFundPool = (amount: number) => {
     if (!isAdmin) return;
-    setTrustFundPool(amount);
+    const chandaCollected = liveFundSummary.totalChandaCollected;
+    const aidDisbursed = liveFundSummary.totalAidDisbursed;
+    setBaseOpeningFund(Math.max(0, amount - chandaCollected + aidDisbursed));
   };
 
   const resetAllData = () => {
@@ -426,7 +504,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setFamilyMembers(INITIAL_FAMILY_MEMBERS);
     setMonthlyPayments(INITIAL_MONTHLY_PAYMENTS);
     setEidEvents(INITIAL_EID_EVENTS);
-    setTrustFundPool(INITIAL_TRUST_SUMMARY.totalFundPool);
+    setBaseOpeningFund(INITIAL_BASE_RESERVE);
     setAidRecords(INITIAL_AID_RECORDS);
     setAidApplications([]);
     localStorage.clear();
@@ -447,12 +525,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         deleteFamilyMember,
         canEditMember,
         chandaMembers,
+        addChandaMember,
+        deleteChandaMember,
         updateChandaMember,
         monthlyPayments,
         selectedMonth,
         setSelectedMonth,
         togglePaymentStatus,
         updatePaymentRecord,
+        baseOpeningFund,
+        updateBaseOpeningFund,
+        totalCurrentBalance,
+        liveFundSummary,
         eidEvents,
         updateEventFinances,
         addExpenseItem,

@@ -7,6 +7,7 @@ import { EidEventsSection } from './components/EidEventsSection';
 import { TrustFundSection } from './components/TrustFundSection';
 import { LoginModal } from './components/LoginModal';
 import { ProfileModal } from './components/ProfileModal';
+import { LiveTreasuryBanner } from './components/LiveTreasuryBanner';
 import { Footer } from './components/Footer';
 
 function MainLayout() {
@@ -28,6 +29,9 @@ function MainLayout() {
 
       {/* Main Content Area */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
+        {/* Live Automatic Balance Banner */}
+        <LiveTreasuryBanner onNavigateTab={setActiveTab} />
+
         {activeTab === 'family' && (
           <FamilySection onOpenLogin={() => setIsLoginModalOpen(true)} />
         )}

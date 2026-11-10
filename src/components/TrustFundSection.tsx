@@ -32,6 +32,8 @@ export const TrustFundSection: React.FC = () => {
     deleteAidRecord,
     submitAidApplication,
     updateTrustFundPool,
+    liveFundSummary,
+    totalCurrentBalance,
     isAdmin,
     currentUser,
   } = useApp();
@@ -159,12 +161,12 @@ export const TrustFundSection: React.FC = () => {
                 </button>
                 <button
                   onClick={() => {
-                    setPoolInput(trustFundPool);
+                    setPoolInput(liveFundSummary.currentBalance);
                     setIsPoolModalOpen(true);
                   }}
                   className="flex items-center gap-1.5 bg-emerald-800 hover:bg-emerald-900 text-white font-bold px-3.5 py-2.5 rounded-xl text-xs shadow-md border border-emerald-700"
                 >
-                  <span>তহবিল সাইজ আপডেট</span>
+                  <span>তহবিল সমন্বয়</span>
                 </button>
               </>
             )}
@@ -180,13 +182,15 @@ export const TrustFundSection: React.FC = () => {
 
         {/* Trust KPIs */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-8 pt-6 border-t border-emerald-700/60">
-          {/* Total Pool */}
+          {/* Total Opening + Collections */}
           <div className="bg-emerald-950/70 border border-emerald-800/80 rounded-2xl p-4 text-center">
-            <span className="text-xs text-emerald-300 font-medium block">মোট ট্রাস্ট তহবিল</span>
+            <span className="text-xs text-emerald-300 font-medium block">প্রারম্ভিক রিজার্ভ</span>
             <span className="text-2xl sm:text-3xl font-extrabold text-white font-serif block mt-1">
-              {formatBDT(trustStats.totalFundPool)}
+              {formatBDT(liveFundSummary.baseOpeningFund)}
             </span>
-            <span className="text-[11px] text-emerald-200/80">সকলের সমন্বিত অনুদান</span>
+            <span className="text-[11px] text-emerald-200/80">
+              + চাঁদা: {formatBDT(liveFundSummary.totalChandaCollected)}
+            </span>
           </div>
 
           {/* Disbursed Aid */}
@@ -196,21 +200,21 @@ export const TrustFundSection: React.FC = () => {
               <span>মোট প্রদত্ত চিকিৎসা সাহায্য</span>
             </span>
             <span className="text-2xl sm:text-3xl font-extrabold text-rose-400 font-serif block mt-1">
-              {formatBDT(trustStats.totalDisbursed)}
+              {formatBDT(liveFundSummary.totalAidDisbursed)}
             </span>
-            <span className="text-[11px] text-rose-200/80">অসুস্থ সদস্যদের প্রদানকৃত</span>
+            <span className="text-[11px] text-rose-200/80">অসুস্থ সদস্যদের দেওয়া হয়েছে</span>
           </div>
 
           {/* Available Reserve Balance */}
           <div className="bg-emerald-950/70 border border-amber-400/80 rounded-2xl p-4 text-center">
             <span className="text-xs text-amber-300 font-medium block flex items-center justify-center gap-1">
               <CheckCircle2 className="w-3.5 h-3.5 text-amber-400" />
-              <span>বর্তমান সংরক্ষিত স্থিতি</span>
+              <span>বর্তমান অবশিষ্ট ফান্ড (লাইভ)</span>
             </span>
             <span className="text-2xl sm:text-3xl font-extrabold text-amber-300 font-serif block mt-1">
-              {formatBDT(trustStats.currentBalance)}
+              {formatBDT(totalCurrentBalance)}
             </span>
-            <span className="text-[11px] text-amber-200/80">জরুরি সেবায় প্রস্তুত নগদ</span>
+            <span className="text-[11px] text-emerald-300 font-bold">জরুরি সেবায় প্রস্তুত নগদ</span>
           </div>
 
           {/* Beneficiaries Count */}
@@ -220,9 +224,23 @@ export const TrustFundSection: React.FC = () => {
               <span>সাহায্যপ্রাপ্ত সদস্য</span>
             </span>
             <span className="text-2xl sm:text-3xl font-extrabold text-teal-300 font-serif block mt-1">
-              {toBengaliNumber(trustStats.totalCasesHelped)} জন
+              {toBengaliNumber(aidRecords.length)} জন
             </span>
             <span className="text-[11px] text-teal-200/80">সফলভাবে সহায়তা প্রদান</span>
+          </div>
+        </div>
+
+        {/* Live Formula Banner */}
+        <div className="mt-4 bg-emerald-900/60 border border-emerald-700/50 rounded-2xl px-4 py-2.5 text-xs flex flex-wrap items-center justify-between gap-2 text-emerald-200">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+            <span className="font-semibold text-white">লাইভ হিসাব ফর্মুলা:</span>
+            <span>
+              প্রারম্ভিক রিজার্ভ ({formatBDT(liveFundSummary.baseOpeningFund)}) + সংগৃহীত চাঁদা ({formatBDT(liveFundSummary.totalChandaCollected)}) - চিকিৎসা ব্যয় ({formatBDT(liveFundSummary.totalAidDisbursed)})
+            </span>
+          </div>
+          <div className="font-bold text-amber-300 text-sm">
+            = মোট ব্যালেন্স: {formatBDT(totalCurrentBalance)}
           </div>
         </div>
       </div>

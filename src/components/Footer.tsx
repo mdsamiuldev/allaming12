@@ -50,7 +50,7 @@ export const Footer: React.FC<FooterProps> = ({ onOpenLogin, setActiveTab }) => 
                   onClick={() => setActiveTab('chanda')}
                   className="hover:text-amber-300 transition-colors"
                 >
-                  • ১৫ জনের মাসিক ৫০০ টাকা চাঁদা হিসাব
+                  • মাসিক চাঁদা তহবিল (সবার চাঁদা, কোনো লিমিট নেই)
                 </button>
               </li>
               <li>

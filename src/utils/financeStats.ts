@@ -83,6 +83,36 @@ export interface TrustStats {
   totalCasesHelped: number;
 }
 
+export interface LiveFundSummary {
+  baseOpeningFund: number;
+  totalChandaCollected: number;
+  totalAidDisbursed: number;
+  currentBalance: number;
+}
+
+export function calculateLiveFundBalance(
+  baseOpeningFund: number,
+  monthlyPayments: MonthlyPaymentRecord[],
+  aidRecords: AidRecord[]
+): LiveFundSummary {
+  const totalChandaCollected = monthlyPayments
+    .filter((p) => p.isPaid)
+    .reduce((sum, p) => sum + (p.amount || 500), 0);
+
+  const totalAidDisbursed = aidRecords
+    .filter((a) => a.status === 'অনুমোদিত ও প্রদানকৃত')
+    .reduce((sum, a) => sum + (a.amount || 0), 0);
+
+  const currentBalance = Math.max(0, baseOpeningFund + totalChandaCollected - totalAidDisbursed);
+
+  return {
+    baseOpeningFund,
+    totalChandaCollected,
+    totalAidDisbursed,
+    currentBalance,
+  };
+}
+
 export function calculateTrustStats(
   baseFundPool: number,
   aidRecords: AidRecord[]

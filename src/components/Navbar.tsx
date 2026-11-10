@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
+import { formatBDT } from '../utils/financeStats';
 import {
   Users,
   CreditCard,
@@ -13,6 +14,7 @@ import {
   Menu,
   X,
   Sparkles,
+  Wallet,
 } from 'lucide-react';
 
 interface NavbarProps {
@@ -28,12 +30,12 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenLogin,
   onOpenProfile,
 }) => {
-  const { currentUser, isAdmin, logout, toggleAdminMode } = useApp();
+  const { currentUser, isAdmin, logout, toggleAdminMode, totalCurrentBalance } = useApp();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navItems = [
     { id: 'family', label: 'পরিবার ও সদস্য', icon: Users, desc: 'সদস্য তালিকা ও তথ্য' },
-    { id: 'chanda', label: '১৫ জনের চাঁদা', icon: CreditCard, desc: 'মাসিক ৫০০ টাকা হিসাব' },
+    { id: 'chanda', label: 'মাসিক চাঁদা তহবিল', icon: CreditCard, desc: 'সবার চাঁদা (কোনো লিমিট নেই)' },
     { id: 'eid', label: 'ঈদ অনুষ্ঠান ও খরচ', icon: Moon, desc: 'ফিতর ও আজহা বাজেট' },
     { id: 'trust', label: 'কল্যাণ ট্রাস্ট', icon: HeartHandshake, desc: 'অসুস্থতায় জরুরি সাহায্য' },
   ] as const;
@@ -84,8 +86,27 @@ export const Navbar: React.FC<NavbarProps> = ({
             })}
           </nav>
 
-          {/* User Auth & Actions */}
+          {/* Live Balance Widget & User Actions */}
           <div className="hidden lg:flex items-center gap-3">
+            {/* Live Auto Balance Widget */}
+            <div
+              onClick={() => setActiveTab('trust')}
+              className="flex items-center gap-2.5 bg-gradient-to-r from-amber-400 via-amber-300 to-amber-400 text-emerald-950 px-3.5 py-2 rounded-2xl shadow-md border border-amber-200 cursor-pointer transition-all hover:scale-105 active:scale-95 group"
+              title="বর্তমান সমন্বিত তহবিল ব্যালেন্স (চাঁদা ও অনুদানের স্বয়ংক্রিয় লাইভ হিসাব)"
+            >
+              <div className="w-8 h-8 rounded-xl bg-emerald-950 text-amber-300 flex items-center justify-center font-bold text-sm shadow-inner group-hover:bg-emerald-900 transition-colors">
+                ৳
+              </div>
+              <div className="text-left leading-tight pr-1">
+                <span className="text-[10px] font-bold text-emerald-900/80 block uppercase tracking-wider">
+                  বর্তমান ব্যালেন্স
+                </span>
+                <span className="text-sm font-extrabold font-serif text-emerald-950 block">
+                  {formatBDT(totalCurrentBalance)}
+                </span>
+              </div>
+            </div>
+
             {currentUser ? (
               <div className="flex items-center gap-2">
                 {/* Admin Mode Toggle Pill */}
@@ -151,12 +172,20 @@ export const Navbar: React.FC<NavbarProps> = ({
             )}
           </div>
 
-          {/* Mobile Menu Button */}
+          {/* Mobile Menu Button & Mobile Balance */}
           <div className="flex md:hidden items-center gap-2">
+            <div
+              onClick={() => setActiveTab('trust')}
+              className="bg-amber-400 text-emerald-950 px-2.5 py-1 rounded-xl text-xs font-extrabold flex items-center gap-1 shadow-sm"
+            >
+              <span>৳</span>
+              <span>{formatBDT(totalCurrentBalance)}</span>
+            </div>
+
             {currentUser && (
               <button
                 onClick={onOpenProfile}
-                className="w-9 h-9 rounded-full overflow-hidden ring-2 ring-amber-400"
+                className="w-8 h-8 rounded-full overflow-hidden ring-2 ring-amber-400"
               >
                 <img src={currentUser.photoUrl} alt={currentUser.name} className="w-full h-full object-cover" />
               </button>
@@ -173,7 +202,23 @@ export const Navbar: React.FC<NavbarProps> = ({
 
         {/* Mobile Dropdown Menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden py-4 border-t border-emerald-800/80 space-y-2">
+          <div className="md:hidden py-4 border-t border-emerald-800/80 space-y-3">
+            {/* Mobile Big Live Balance Card */}
+            <div className="bg-gradient-to-r from-amber-400 to-amber-300 text-emerald-950 p-3 rounded-2xl flex items-center justify-between shadow-md">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-emerald-950 text-amber-300 flex items-center justify-center font-bold text-sm">
+                  ৳
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold text-emerald-900/80 block uppercase">বর্তমান ব্যালেন্স</span>
+                  <span className="text-base font-extrabold font-serif">{formatBDT(totalCurrentBalance)}</span>
+                </div>
+              </div>
+              <span className="text-[10px] font-bold bg-emerald-950/20 text-emerald-950 px-2 py-0.5 rounded-full">
+                অটো আপডেট
+              </span>
+            </div>
+
             <div className="grid grid-cols-2 gap-2 pb-2">
               {navItems.map((item) => {
                 const Icon = item.icon;

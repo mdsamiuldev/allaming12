@@ -37,41 +37,8 @@ export const INITIAL_CHANDA_MEMBERS: ChandaMember[] = [
   { id: 15, name: 'তানভীর আহমেদ মোল্লা', fatherOrHusbandName: 'সাইফুল ইসলাম মোল্লা', phone: '০১৮৫৫-৬৬৭৭৮৮', monthlyAmount: 500, avatar: '👨‍🎓' },
 ];
 
-export const INITIAL_MONTHLY_PAYMENTS: MonthlyPaymentRecord[] = [
-  // 2026-01
-  { memberId: 1, month: '2026-01', isPaid: true, amount: 500, paidDate: '২০২৬-০১-০২', note: 'বিকাশে প্রাপ্ত' },
-  { memberId: 2, month: '2026-01', isPaid: true, amount: 500, paidDate: '২০২৬-০১-০৫', note: 'নগদ জমা' },
-  { memberId: 3, month: '2026-01', isPaid: true, amount: 500, paidDate: '২০২৬-০১-০৭', note: 'নগদ জমা' },
-  { memberId: 4, month: '2026-01', isPaid: true, amount: 500, paidDate: '২০২৬-০১-০৮', note: 'ব্যাংক ট্রান্সফার' },
-  { memberId: 5, month: '2026-01', isPaid: true, amount: 500, paidDate: '২০২৬-০১-১০', note: 'বিকাশ' },
-  { memberId: 6, month: '2026-01', isPaid: true, amount: 500, paidDate: '২০২৬-০১-১১', note: 'নগদ' },
-  { memberId: 7, month: '2026-01', isPaid: true, amount: 500, paidDate: '২০২৬-০১-১২', note: 'বিকাশ' },
-  { memberId: 8, month: '2026-01', isPaid: true, amount: 500, paidDate: '২০২৬-০১-১৫', note: 'নগদ' },
-  { memberId: 9, month: '2026-01', isPaid: true, amount: 500, paidDate: '২০২৬-০১-১৬', note: 'বিকাশ' },
-  { memberId: 10, month: '2026-01', isPaid: true, amount: 500, paidDate: '২০২৬-০১-১৮', note: 'নগদ' },
-  { memberId: 11, month: '2026-01', isPaid: true, amount: 500, paidDate: '২০২৬-০১-২০', note: 'নগদ' },
-  { memberId: 12, month: '2026-01', isPaid: true, amount: 500, paidDate: '২০২৬-০১-২১', note: 'বিকাশ' },
-  { memberId: 13, month: '2026-01', isPaid: true, amount: 500, paidDate: '২০২৬-০১-২৫', note: 'নগদ' },
-  { memberId: 14, month: '2026-01', isPaid: true, amount: 500, paidDate: '২০২৬-০১-২৭', note: 'নগদ' },
-  { memberId: 15, month: '2026-01', isPaid: true, amount: 500, paidDate: '২০২৬-০১-২৮', note: 'বিকাশ' },
-
-  // 2026-02 (Current active month sample with some paid and some due)
-  { memberId: 1, month: '2026-02', isPaid: true, amount: 500, paidDate: '২০২৬-০২-০১', note: 'বিকাশ পরিশোধ' },
-  { memberId: 2, month: '2026-02', isPaid: true, amount: 500, paidDate: '২০২৬-০২-০৩', note: 'নগদ জমা' },
-  { memberId: 3, month: '2026-02', isPaid: true, amount: 500, paidDate: '২০২৬-০২-০৪', note: 'নগদ জমা' },
-  { memberId: 4, month: '2026-02', isPaid: true, amount: 500, paidDate: '২০২৬-০২-০৫', note: 'ব্যাংক ট্রান্সফার' },
-  { memberId: 5, month: '2026-02', isPaid: true, amount: 500, paidDate: '২০২৬-০২-০৬', note: 'বিকাশ' },
-  { memberId: 6, month: '2026-02', isPaid: false, amount: 0, note: 'বকেয়া রয়েছে' },
-  { memberId: 7, month: '2026-02', isPaid: true, amount: 500, paidDate: '২০২৬-০২-০৮', note: 'বিকাশ' },
-  { memberId: 8, month: '2026-02', isPaid: false, amount: 0, note: 'বকেয়া রয়েছে' },
-  { memberId: 9, month: '2026-02', isPaid: true, amount: 500, paidDate: '২০২৬-০২-০৮', note: 'বিকাশ' },
-  { memberId: 10, month: '2026-02', isPaid: false, amount: 0, note: 'বকেয়া রয়েছে' },
-  { memberId: 11, month: '2026-02', isPaid: true, amount: 500, paidDate: '২০২৬-০২-০৯', note: 'নগদ' },
-  { memberId: 12, month: '2026-02', isPaid: false, amount: 0, note: 'বকেয়া রয়েছে' },
-  { memberId: 13, month: '2026-02', isPaid: true, amount: 500, paidDate: '২০২৬-০২-১০', note: 'নগদ' },
-  { memberId: 14, month: '2026-02', isPaid: false, amount: 0, note: 'বকেয়া রয়েছে' },
-  { memberId: 15, month: '2026-02', isPaid: true, amount: 500, paidDate: '২০২৬-০২-১০', note: 'বিকাশ' },
-];
+// মাসিক চাঁদা পরিশোধের রেকর্ড (সদস্যরা বা অ্যাডমিন টাকা পরিশোধ চিহ্নিত করলে স্বয়ংক্রিয়ভাবে ব্যালেন্সে যোগ হবে)
+export const INITIAL_MONTHLY_PAYMENTS: MonthlyPaymentRecord[] = [];
 
 // পরিবারের সদস্য তালিকা (ব্যবহারকারীরা যখন যুক্ত করবে তখন এখানে সাথে সাথে শো করবে)
 export const INITIAL_FAMILY_MEMBERS: FamilyMember[] = [];
@@ -106,51 +73,13 @@ export const INITIAL_EID_EVENTS: EidEvent[] = [
   },
 ];
 
-// মোল্লা পরিবার কল্যাণ ট্রাস্ট (অসুস্থতা, চিকিৎসা ও আপৎকালীন সহায়তা)
-export const INITIAL_AID_RECORDS: AidRecord[] = [
-  {
-    id: 'aid-1',
-    recipientName: 'আক্কাস মোল্লা (বড় চাচা)',
-    relationship: 'চাচা',
-    reason: 'জরুরি অপারেশন',
-    description: 'হৃদরোগের চিকিৎসার জন্য জরুরি এনজিওগ্রাম ও রিং পরানোর হাসপাতালের খরচ সহায়তা প্রদান করা হয়েছে।',
-    amount: 35000,
-    date: '২০২৫-১১-২০',
-    approvedBy: 'এমডি সামিউল ইসলাম ও ট্রাস্ট উপদেষ্টা পরিষদ',
-    hospitalOrDoctor: 'জাতীয় হৃদরোগ ইনস্টিটিউট, ঢাকা',
-    status: 'অনুমোদিত ও প্রদানকৃত',
-    contactPhone: '০১৭২২-৩৩৪৪৫৫',
-  },
-  {
-    id: 'aid-2',
-    recipientName: 'সালমা খাতুন (ফুফু)',
-    relationship: 'ফুফু',
-    reason: 'অসুস্থতা ও চিকিৎসা',
-    description: 'ব্রেন স্ট্রোক পরবর্তী থেরাপি ও তিন মাসের জরুরি প্রেসক্রিপশনের ঔষধ সামগ্রী ক্রয়ের জন্য ট্রাস্ট থেকে এককালীন অনুদান।',
-    amount: 20000,
-    date: '২০২৬-০১-০৫',
-    approvedBy: 'এমডি সামিউল ইসলাম (অ্যাডমিন)',
-    hospitalOrDoctor: 'ঢাকা মেডিকেল কলেজ ও নিউরোলজি কেয়ার',
-    status: 'অনুমোদিত ও প্রদানকৃত',
-    contactPhone: '০১৭৩৩-৯৯৮৮৭৭',
-  },
-  {
-    id: 'aid-3',
-    recipientName: 'কামরুল হাসান মোল্লা',
-    relationship: 'চাতাতো ভাই',
-    reason: 'দুর্ঘটনা',
-    description: 'মোটরসাইকেল দুর্ঘটনায় পায়ের হাড় ভেঙে যাওয়ায় প্লাস্টার ও অর্থোপেডিক অপারেশনের খরচ মেটাতে আর্থিক অনুদান।',
-    amount: 25000,
-    date: '২০২৬-০২-০২',
-    approvedBy: 'এমডি সামিউল ইসলাম (অ্যাডমিন)',
-    hospitalOrDoctor: 'পঙ্গু হাসপাতাল (নিটোর), শ্যামলী',
-    status: 'অনুমোদিত ও প্রদানকৃত',
-    contactPhone: '০১৭৮৮-৯৯০০১১',
-  },
-];
+// মোল্লা পরিবার কল্যাণ ট্রাস্ট (অসুস্থতা, চিকিৎসা ও আপৎকালীন সহায়তা রেকর্ড)
+export const INITIAL_AID_RECORDS: AidRecord[] = [];
+
+export const INITIAL_BASE_RESERVE = 25000;
 
 export const INITIAL_TRUST_SUMMARY = {
-  totalFundPool: 180000,
-  totalDisbursed: 80000,
+  totalFundPool: 25000,
+  totalDisbursed: 0,
 };
 
