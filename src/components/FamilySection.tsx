@@ -20,6 +20,9 @@ import {
   Droplet,
   Baby,
   UserCheck,
+  Lock,
+  LogIn,
+  Shield,
 } from 'lucide-react';
 
 interface FamilySectionProps {
@@ -27,13 +30,21 @@ interface FamilySectionProps {
 }
 
 export const FamilySection: React.FC<FamilySectionProps> = ({ onOpenLogin }) => {
-  const { familyMembers, addFamilyMember, updateFamilyMember, deleteFamilyMember, isAdmin, currentUser } =
-    useApp();
+  const {
+    familyMembers,
+    addFamilyMember,
+    updateFamilyMember,
+    deleteFamilyMember,
+    canEditMember,
+    isAdmin,
+    currentUser,
+  } = useApp();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [filterLiving, setFilterLiving] = useState<'all' | 'resident' | 'non-resident'>('all');
   const [filterGender, setFilterGender] = useState<'all' | 'male' | 'female'>('all');
   const [filterAge, setFilterAge] = useState<'all' | 'child' | 'adult'>('all');
+  const [filterOwnership, setFilterOwnership] = useState<'all' | 'my-added'>('all');
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingMember, setEditingMember] = useState<FamilyMember | null>(null);
@@ -52,15 +63,27 @@ export const FamilySection: React.FC<FamilySectionProps> = ({ onOpenLogin }) => 
 
   const stats = calculateFamilyStats(familyMembers);
 
+  const myAddedCount = currentUser?.email
+    ? familyMembers.filter(
+        (m) => m.createdByEmail?.toLowerCase().trim() === currentUser.email.toLowerCase().trim()
+      ).length
+    : 0;
+
   const filteredMembers = filterFamilyMembers(
     familyMembers,
     searchQuery,
     filterLiving,
     filterGender,
-    filterAge
+    filterAge,
+    filterOwnership,
+    currentUser?.email
   );
 
   const openAddModal = () => {
+    if (!currentUser) {
+      onOpenLogin();
+      return;
+    }
     setEditingMember(null);
     setName('');
     setGender('male');
@@ -219,14 +242,69 @@ export const FamilySection: React.FC<FamilySectionProps> = ({ onOpenLogin }) => 
         </div>
       </div>
 
+      {/* User Login & Ownership Status Banner */}
+      {currentUser ? (
+        <div className="bg-gradient-to-r from-emerald-50 via-teal-50 to-emerald-50 border border-emerald-200/90 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-emerald-700 text-white flex items-center justify-center font-bold text-sm shadow-sm shrink-0">
+              {currentUser.name.charAt(0)}
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-emerald-950 text-sm sm:text-base">
+                  স্বাগতম, {currentUser.name}
+                </span>
+                <span className="bg-emerald-200 text-emerald-900 text-[10px] font-extrabold px-2 py-0.5 rounded-full">
+                  লগইন সক্রিয়
+                </span>
+              </div>
+              <p className="text-emerald-800 text-xs mt-0.5">
+                অ্যাকাউন্ট: <span className="font-mono">{currentUser.email}</span> • আপনি যে সদস্য যোগ করবেন শুধু আপনিই তা পরিবর্তন/আপডেট করতে পারবেন।
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 self-start sm:self-center">
+            <span className="bg-white border border-emerald-300 text-emerald-900 text-xs font-bold px-3 py-1.5 rounded-xl shadow-xs flex items-center gap-1.5">
+              <UserCheck className="w-3.5 h-3.5 text-emerald-600" />
+              <span>আপনার পরিবারের সদস্য: {toBengaliNumber(myAddedCount)} জন</span>
+            </span>
+          </div>
+        </div>
+      ) : (
+        <div className="bg-amber-50 border border-amber-200/90 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-amber-500 text-white flex items-center justify-center shadow-sm shrink-0">
+              <Lock className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <span className="font-bold text-amber-950 text-sm sm:text-base block">
+                পরিবারের সদস্য যোগ ও পরিচালনা করতে লগইন করুন
+              </span>
+              <p className="text-amber-800 text-xs mt-0.5">
+                যেকোনো সদস্য তাদের জিমেইল দিয়ে লগইন করে নিজের পরিবারের সদস্যদের যোগ করতে পারবেন। যে যে সদস্য যোগ করবে শুধু সেই তা এডিট করতে পারবে।
+              </p>
+            </div>
+          </div>
+
+          <button
+            onClick={onOpenLogin}
+            className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold px-5 py-2.5 rounded-xl shadow-md transition-all text-xs shrink-0"
+          >
+            <LogIn className="w-4 h-4" />
+            <span>জিমেইল দিয়ে লগইন করুন</span>
+          </button>
+        </div>
+      )}
+
       {/* Filter and Search Bar */}
-      <div className="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-emerald-100 flex flex-col md:flex-row gap-4 items-stretch md:items-center justify-between">
+      <div className="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-emerald-100 flex flex-col lg:flex-row gap-4 items-stretch lg:items-center justify-between">
         {/* Search Input */}
         <div className="relative flex-1">
           <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
             type="text"
-            placeholder="নাম, সম্পর্ক, পেশা বা থাকার জায়গা দিয়ে খুঁজুন..."
+            placeholder="নাম, সম্পর্ক, পেশা, সংযোজনকারী বা বাসস্থান দিয়ে খুঁজুন..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 text-sm outline-none transition-all"
@@ -243,6 +321,35 @@ export const FamilySection: React.FC<FamilySectionProps> = ({ onOpenLogin }) => 
 
         {/* Filter Pills */}
         <div className="flex flex-wrap items-center gap-2">
+          {/* Ownership Filter Toggle */}
+          {currentUser && (
+            <div className="flex items-center bg-gray-100 p-1 rounded-xl">
+              <button
+                type="button"
+                onClick={() => setFilterOwnership('all')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                  filterOwnership === 'all'
+                    ? 'bg-white text-emerald-950 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                সকল সদস্য ({toBengaliNumber(stats.totalMembers)})
+              </button>
+              <button
+                type="button"
+                onClick={() => setFilterOwnership('my-added')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                  filterOwnership === 'my-added'
+                    ? 'bg-emerald-800 text-white shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                <UserCheck className="w-3.5 h-3.5" />
+                <span>আমার পরিবার ({toBengaliNumber(myAddedCount)})</span>
+              </button>
+            </div>
+          )}
+
           {/* Living status filter */}
           <select
             value={filterLiving}
@@ -276,13 +383,14 @@ export const FamilySection: React.FC<FamilySectionProps> = ({ onOpenLogin }) => 
             <option value="adult">বড় সদস্য ({toBengaliNumber(stats.adultCount)})</option>
           </select>
 
-          {(searchQuery || filterLiving !== 'all' || filterGender !== 'all' || filterAge !== 'all') && (
+          {(searchQuery || filterLiving !== 'all' || filterGender !== 'all' || filterAge !== 'all' || filterOwnership !== 'all') && (
             <button
               onClick={() => {
                 setSearchQuery('');
                 setFilterLiving('all');
                 setFilterGender('all');
                 setFilterAge('all');
+                setFilterOwnership('all');
               }}
               className="text-xs text-rose-600 hover:text-rose-700 font-bold px-2 py-1.5"
             >
@@ -340,6 +448,23 @@ export const FamilySection: React.FC<FamilySectionProps> = ({ onOpenLogin }) => 
                   >
                     {member.ageCategory === 'child' ? 'ছোট' : 'বড়'} ({toBengaliNumber(member.age)} বছর)
                   </span>
+
+                  {/* Creator / Ownership Badge */}
+                  {currentUser?.email &&
+                  member.createdByEmail?.toLowerCase().trim() === currentUser.email.toLowerCase().trim() ? (
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-300 flex items-center gap-1">
+                      <UserCheck className="w-3 h-3 text-emerald-700" />
+                      <span>আপনার পরিবার</span>
+                    </span>
+                  ) : member.createdByName ? (
+                    <span
+                      className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200 flex items-center gap-1"
+                      title={`সংযোজন করেছেন: ${member.createdByName} (${member.createdByEmail || ''})`}
+                    >
+                      <Lock className="w-2.5 h-2.5 text-slate-400" />
+                      <span className="truncate max-w-[95px]">{member.createdByName}</span>
+                    </span>
+                  ) : null}
                 </div>
 
                 {/* Blood Group */}
@@ -404,20 +529,27 @@ export const FamilySection: React.FC<FamilySectionProps> = ({ onOpenLogin }) => 
               </div>
             </div>
 
-            {/* Actions for Admin */}
+            {/* Actions & Creator Ownership */}
             <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between text-xs">
               <span className="text-[11px] text-gray-400 font-mono">
                 আইডি: #{member.id.replace('f-', '')}
               </span>
 
-              {isAdmin ? (
-                <div className="flex items-center gap-1">
+              {canEditMember(member) ? (
+                <div className="flex items-center gap-1.5">
+                  {currentUser?.email &&
+                    member.createdByEmail?.toLowerCase().trim() === currentUser.email.toLowerCase().trim() && (
+                      <span className="text-[10px] text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md font-bold hidden sm:inline-block">
+                        আপনার এন্ট্রি
+                      </span>
+                    )}
                   <button
                     onClick={() => openEditModal(member)}
-                    className="p-1.5 rounded-lg text-emerald-700 hover:bg-emerald-50 transition-colors"
-                    title="সম্পাদনা করুন"
+                    className="flex items-center gap-1 p-1.5 px-2.5 rounded-lg text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200/80 transition-colors font-medium text-xs shadow-2xs"
+                    title="সদস্যের তথ্য সম্পাদনা / আপডেট করুন"
                   >
-                    <Edit2 className="w-3.5 h-3.5" />
+                    <Edit2 className="w-3 h-3 text-emerald-700" />
+                    <span>আপডেট</span>
                   </button>
                   <button
                     onClick={() => {
@@ -432,9 +564,12 @@ export const FamilySection: React.FC<FamilySectionProps> = ({ onOpenLogin }) => 
                   </button>
                 </div>
               ) : (
-                <span className="text-[11px] text-emerald-600 font-medium flex items-center gap-1">
-                  <UserCheck className="w-3 h-3" />
-                  <span>পরিবারের সদস্য</span>
+                <span
+                  className="text-[11px] text-slate-500 font-medium flex items-center gap-1 bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-200"
+                  title="এই সদস্য অন্য কেউ যুক্ত করেছেন। শুধুমাত্র যিনি যুক্ত করেছেন তিনিই পরিবর্তন করতে পারবেন।"
+                >
+                  <Lock className="w-3 h-3 text-amber-600" />
+                  <span>সংরক্ষিত ({member.createdByName || 'অন্যান্য সদস্য'})</span>
                 </span>
               )}
             </div>
@@ -494,13 +629,33 @@ export const FamilySection: React.FC<FamilySectionProps> = ({ onOpenLogin }) => 
               <X className="w-5 h-5" />
             </button>
 
-            <div className="mb-6">
+            <div className="mb-4">
               <h3 className="text-xl font-bold text-gray-900 font-serif">
                 {editingMember ? 'সদস্যের তথ্য সম্পাদনা' : 'পরিবারে নতুন সদস্য যোগ করুন'}
               </h3>
               <p className="text-xs text-gray-500 mt-1">
                 মোল্লা পরিবারের সদস্যের নাম, ছেলে/মেয়ে, বয়স, বাসস্থান ইত্যাদির তথ্য দিন।
               </p>
+            </div>
+
+            {/* Ownership Info Banner in Modal */}
+            <div className="mb-5 bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200/90 rounded-2xl p-3.5 text-xs text-emerald-950 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <UserCheck className="w-4 h-4 text-emerald-700 shrink-0" />
+                <div>
+                  <span className="font-bold block">
+                    {editingMember ? 'সদস্যের স্বত্বাধিকারী' : 'সংযোজনকারী একাউন্ট'}:
+                  </span>
+                  <span className="text-emerald-800 text-[11px]">
+                    {editingMember
+                      ? `${editingMember.createdByName || 'পারিবারিক সদস্য'} (${editingMember.createdByEmail || ''})`
+                      : `${currentUser?.name || 'ব্যবহারকারী'} (${currentUser?.email || 'লগইন একাউন্ট'})`}
+                  </span>
+                </div>
+              </div>
+              <span className="text-[10px] font-bold bg-emerald-200 text-emerald-900 px-2 py-0.5 rounded-full shrink-0">
+                {editingMember ? 'আপনার অনুমোদিত' : 'আপনার নিয়ন্ত্রণে থাকবে'}
+              </span>
             </div>
 
             <form onSubmit={handleFormSubmit} className="space-y-4">

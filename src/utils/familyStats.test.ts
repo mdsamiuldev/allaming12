@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { calculateFamilyStats, filterFamilyMembers } from './familyStats';
+import { calculateFamilyStats, filterFamilyMembers, canUserManageMember } from './familyStats';
 import { FamilyMember } from '../types';
 
 const mockMembers: FamilyMember[] = [
@@ -87,3 +87,37 @@ test('filterFamilyMembers searches and filters by residence and gender', () => {
   assert.equal(searched.length, 1);
   assert.equal(searched[0].id, 'm3');
 });
+
+test('canUserManageMember correctly grants access to creator and master admin only', () => {
+  const memberWithCreator: FamilyMember = {
+    ...mockMembers[0],
+    createdByEmail: 'member1@gmail.com',
+  };
+
+  // Creator can manage
+  assert.equal(canUserManageMember(memberWithCreator, 'member1@gmail.com'), true);
+  // Other user cannot manage
+  assert.equal(canUserManageMember(memberWithCreator, 'otheruser@gmail.com'), false);
+  // Unauthenticated user cannot manage
+  assert.equal(canUserManageMember(memberWithCreator, null), false);
+  // Master Admin (samiul122344@gmail.com) can manage
+  assert.equal(canUserManageMember(memberWithCreator, 'samiul122344@gmail.com'), true);
+});
+
+test('filterFamilyMembers with filterOwnership my-added filters by current user email', () => {
+  const list: FamilyMember[] = [
+    { ...mockMembers[0], id: 'a1', createdByEmail: 'user1@gmail.com' },
+    { ...mockMembers[1], id: 'a2', createdByEmail: 'user2@gmail.com' },
+    { ...mockMembers[2], id: 'a3', createdByEmail: 'user1@gmail.com' },
+  ];
+
+  const user1Members = filterFamilyMembers(list, '', 'all', 'all', 'all', 'my-added', 'user1@gmail.com');
+  assert.equal(user1Members.length, 2);
+  assert.equal(user1Members[0].id, 'a1');
+  assert.equal(user1Members[1].id, 'a3');
+
+  const user2Members = filterFamilyMembers(list, '', 'all', 'all', 'all', 'my-added', 'user2@gmail.com');
+  assert.equal(user2Members.length, 1);
+  assert.equal(user2Members[0].id, 'a2');
+});
+

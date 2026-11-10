@@ -18,6 +18,7 @@ import {
   INITIAL_AID_RECORDS,
   INITIAL_TRUST_SUMMARY,
 } from '../data/seedData';
+import { canUserManageMember } from '../utils/familyStats';
 
 interface AppContextType {
   // User & Auth
@@ -33,6 +34,7 @@ interface AppContextType {
   addFamilyMember: (member: Omit<FamilyMember, 'id'>) => void;
   updateFamilyMember: (id: string, member: Partial<FamilyMember>) => void;
   deleteFamilyMember: (id: string) => void;
+  canEditMember: (member: FamilyMember) => boolean;
 
   // 15 Members Monthly Chanda (500 BDT)
   chandaMembers: ChandaMember[];
@@ -194,21 +196,56 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
   };
 
-  // Family Members CRUD
+  // Family Members CRUD with Creator-Based Ownership
+  const canEditMember = (member: FamilyMember): boolean => {
+    return canUserManageMember(member, currentUser?.email);
+  };
+
   const addFamilyMember = (member: Omit<FamilyMember, 'id'>) => {
+    const creatorEmail = currentUser?.email?.trim() || 'guest@molla.family';
+    const creatorName =
+      currentUser?.name?.trim() ||
+      (currentUser?.email ? currentUser.email.split('@')[0] : 'অজ্ঞাত সদস্য');
+
     const newMember: FamilyMember = {
       ...member,
       id: `f-${Date.now()}`,
+      createdByEmail: member.createdByEmail || creatorEmail,
+      createdByName: member.createdByName || creatorName,
+      createdById: member.createdById || currentUser?.id || 'guest',
+      createdAt: member.createdAt || new Date().toISOString(),
     };
     setFamilyMembers((prev) => [newMember, ...prev]);
   };
 
-  const updateFamilyMember = (id: string, member: Partial<FamilyMember>) => {
-    setFamilyMembers((prev) => prev.map((m) => (m.id === id ? { ...m, ...member } : m)));
+  const updateFamilyMember = (id: string, updatedData: Partial<FamilyMember>) => {
+    setFamilyMembers((prev) =>
+      prev.map((m) => {
+        if (m.id !== id) return m;
+        // Verify ownership: only creator or master admin can update
+        const allowed = canUserManageMember(m, currentUser?.email);
+        if (!allowed) {
+          console.warn('Unauthorized update attempt on member:', id);
+          return m;
+        }
+        return { ...m, ...updatedData };
+      })
+    );
   };
 
   const deleteFamilyMember = (id: string) => {
-    setFamilyMembers((prev) => prev.filter((m) => m.id !== id));
+    setFamilyMembers((prev) =>
+      prev.filter((m) => {
+        if (m.id !== id) return true;
+        // Verify ownership: only creator or master admin can delete
+        const allowed = canUserManageMember(m, currentUser?.email);
+        if (!allowed) {
+          console.warn('Unauthorized delete attempt on member:', id);
+          return true; // do not delete
+        }
+        return false;
+      })
+    );
   };
 
   // 15 Members Update (Name, Father/Husband, Phone)
@@ -408,6 +445,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         addFamilyMember,
         updateFamilyMember,
         deleteFamilyMember,
+        canEditMember,
         chandaMembers,
         updateChandaMember,
         monthlyPayments,

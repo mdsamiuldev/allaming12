@@ -28,6 +28,10 @@ export interface FamilyMember {
   bloodGroup?: string;
   photoUrl?: string;
   notes?: string;
+  createdByEmail?: string; // যে সদস্য এটি যুক্ত করেছে তার জিমেইল
+  createdByName?: string;
+  createdById?: string;
+  createdAt?: string;
 }
 
 export interface ChandaMember {
